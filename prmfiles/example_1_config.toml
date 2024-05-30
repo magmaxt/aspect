@@ -1,0 +1,15 @@
+base_dir = "/Users/tian_bc/Documents/postdoc/postdoc_meetings_workshops/2024-ASPECT-hack/aspect-output/drex_olivine/"
+#experiment_dirs = ["output/"]
+experiment_dirs = ["drex_olivine_B/"]
+compressed = false
+
+[pole_figures]
+    elastisity_header = true
+    small_figure = true
+    no_description_text = false
+    color_scale = "Batlow"
+    times = [1.0,1e5,3e5]
+    particle_ids = [0]
+    axes = ["AAxis","BAxis","CAxis"]
+    minerals = ["Olivine","Enstatite"]
+    grain_data_file_prefix = "particle_LPO/weighted_LPO"
