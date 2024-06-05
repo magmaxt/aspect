@@ -703,10 +703,16 @@ namespace aspect
           }
         else if (deformation_type == DeformationType::olivine_d_fabric)
           {
+            //Olivine axes length in angstrom (Å)
+            Tensor<1,3> olivine_a_axis ({4.816,0.,0.});
+            Tensor<1,3> olivine_b_axis ({0.,10.469,0.});
+            Tensor<1,3> olivine_c_axis ({0.,0.,6.099});
+
             //crystal axis b minus axis c
-            Tensor<1,3> tensor2 = Tensor<1,3>({0,1,0})-Tensor<1,3>({0,0,1});
+
+            Tensor<1,3> vec_b_minus_c = olivine_b_axis - olivine_c_axis;
             // cross product between a*(b-c) to get normal vector for nsp{011}
-            Tensor<1,3> plane011_normal = cross_product_3d(Tensor<1,3>({0,0,1}),tensor2);
+            Tensor<1,3> plane011_normal = cross_product_3d(olivine_a_axis,vec_b_minus_c);
             plane011_normal /= plane011_normal.norm();
             // provide slip systems: n and l vector combinations for bigI in equation5 of Kaminski 2001
             std::array<Tensor<1,3>,4> slip_normal_reference {{Tensor<1,3>({0,1,0}),Tensor<1,3>({0,0,1}),Tensor<1,3>({0,1,0}),plane011_normal}};
