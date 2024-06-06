@@ -670,36 +670,49 @@ namespace aspect
         //debugging ends
 
         // CPX and olivine_d_fabric has different slip systems
-        // first initiate the l and n
+        // first initiate the l and n for olivine A,B,C,E types
         std::array<Tensor<1,3>,4> slip_normal_reference {{Tensor<1,3>({0,1,0}),Tensor<1,3>({0,0,1}),Tensor<1,3>({0,1,0}),Tensor<1,3>({1,0,0})}};
         std::array<Tensor<1,3>,4> slip_direction_reference {{Tensor<1,3>({1,0,0}),Tensor<1,3>({1,0,0}),Tensor<1,3>({0,0,1}),Tensor<1,3>({0,0,1})}};
         if (deformation_type == DeformationType::clinopyroxene)
           {
             // more accurate way to calculate slip plane <110> normal by doing cross product
-            // tensor 1 is vector b axis minus the vector a axis
+            // First CPX crystal structure info, length unit Angstrom (Å) 
+            //see Clinopyroxene on mindat.org at https://www.mindat.org/min-7630.html
+            const Tensor<1,3> vec_a_axis ({9.658, 0., 0.});
+            //const Tensor<1,3> vec_a_axis ({1.658, 0., 0.});
+            const Tensor<1,3> vec_b_axis ({0.,8.795, 0.});
+            const double length_c = 5.294; //[Angstrom]
+            const double angle_beta = 107.42 / 180.* M_PI; //107.42 degrees turns into rad
+            const Tensor<1,3> vec_c_axis ({length_c * std::cos(angle_beta), 0, length_c * std::sin(angle_beta)});
 
+            // tensor 1 is vector b axis minus the vector a axis
             // Calculate plane110_normal --> crystal axis b minus axis a
-            Tensor<1,3> vec_b_minus_a = Tensor<1,3>({0,1,0})-Tensor<1,3>({1,0,0});
+            Tensor<1,3> vec_b_minus_a = vec_b_axis - vec_a_axis;
             // for (int i = 2; i >= 0; i--)
             //   std::cout << "vec_b_mins_a["<<i<<"]"<< vec_b_minus_a[i]<<std::endl;
             // cross product between c*(b-a) to get normal vector for slip plane nsp{110}
-            Tensor<1,3> plane110_normal = cross_product_3d(vec_b_minus_a,Tensor<1,3>({0,0,1}));
+            Tensor<1,3> plane110_normal = cross_product_3d(vec_b_minus_a,vec_c_axis);
             plane110_normal /= plane110_normal.norm();
             // for (int i = 2; i >= 0; i--)
             //   std::cout << "plane110_normal["<<i<<"]"<< plane110_normal[i]<<std::endl;
 
             // Calculate plane11_0_normal --> crystal axis a minus axis -b
-            Tensor<1,3> vec_a_minus_neg_b = Tensor<1,3>({1,0,0})-Tensor<1,3>({0,-1,0});
+            Tensor<1,3> vec_a_minus_neg_b = vec_a_axis - (-vec_b_axis);
             // cross product between (a-(-b))*c to get normal vector for slip plane nsp{110}
-            Tensor<1,3> plane11_0_normal = cross_product_3d(vec_a_minus_neg_b,Tensor<1,3>({0,0,1}));
+            Tensor<1,3> plane11_0_normal = cross_product_3d(vec_a_minus_neg_b,vec_c_axis);
             plane11_0_normal /= plane11_0_normal.norm();
 
             // Calculate slip direction vector 110 a + b
-            Tensor<1,3> sd110 = Tensor<1,3>({1,0,0})+Tensor<1,3>({0,1,0});
+            Tensor<1,3> sd110 = vec_a_axis + vec_b_axis;
             sd110 /= sd110.norm();
             // provide slip systems: n and l vector combinations for bigI in equation5 of Kaminski 2001
-            std::array<Tensor<1,3>,4> slip_normal_reference {{Tensor<1,3>({0,1,0}),plane11_0_normal,plane110_normal,Tensor<1,3>({1,0,0})}};
-            std::array<Tensor<1,3>,4> slip_direction_reference {{Tensor<1,3>({0,0,1}),sd110,Tensor<1,3>({0,0,1}),Tensor<1,3>({0,0,1})}};
+            //std::array<Tensor<1,3>,4> slip_normal_reference {{Tensor<1,3>({0,1,0}),plane11_0_normal,plane110_normal,Tensor<1,3>({1,0,0})}};
+            //std::array<Tensor<1,3>,4> slip_direction_reference {{Tensor<1,3>({0,0,1}),sd110,Tensor<1,3>({0,0,1}),Tensor<1,3>({0,0,1})}};
+            //std::array<Tensor<1,3>,4> slip_normal_reference {{Tensor<1,3>({0,1,0}),plane11_0_normal,plane110_normal,Tensor<1,3>({1,0,0})}};
+            //std::array<Tensor<1,3>,4> slip_direction_reference {{Tensor<1,3>({0,0,1}),0.5*sd110,Tensor<1,3>({0,0,1}),Tensor<1,3>({0,0,1})}};
+            //BUG: should not define slip_normal and slip_direction within if statement block again!! once leaving the block it is gone!!!
+             slip_normal_reference =  {{Tensor<1,3>({0,1,0}),plane11_0_normal,plane110_normal,Tensor<1,3>({1,0,0})}};
+            slip_direction_reference = {{Tensor<1,3>({0,0,1}),0.5*sd110,Tensor<1,3>({0,0,1}),Tensor<1,3>({0,0,1})}};
           }
         else if (deformation_type == DeformationType::olivine_d_fabric)
           {
@@ -715,14 +728,10 @@ namespace aspect
             Tensor<1,3> plane011_normal = cross_product_3d(olivine_a_axis,vec_b_minus_c);
             plane011_normal /= plane011_normal.norm();
             // provide slip systems: n and l vector combinations for bigI in equation5 of Kaminski 2001
-            std::array<Tensor<1,3>,4> slip_normal_reference {{Tensor<1,3>({0,1,0}),Tensor<1,3>({0,0,1}),Tensor<1,3>({0,1,0}),plane011_normal}};
-            std::array<Tensor<1,3>,4> slip_direction_reference {{Tensor<1,3>({1,0,0}),Tensor<1,3>({1,0,0}),Tensor<1,3>({0,0,1}),Tensor<1,3>({1,0,0})}};
+            //std::array<Tensor<1,3>,4> slip_normal_reference {{Tensor<1,3>({0,1,0}),Tensor<1,3>({0,0,1}),Tensor<1,3>({0,1,0}),plane011_normal}};
+            //std::array<Tensor<1,3>,4> slip_direction_reference {{Tensor<1,3>({1,0,0}),Tensor<1,3>({1,0,0}),Tensor<1,3>({0,0,1}),Tensor<1,3>({1,0,0})}};
           }
-        else  //Olivine A,B,C,E types
-          {
-            std::array<Tensor<1,3>,4> slip_normal_reference {{Tensor<1,3>({0,1,0}),Tensor<1,3>({0,0,1}),Tensor<1,3>({0,1,0}),Tensor<1,3>({1,0,0})}};
-            std::array<Tensor<1,3>,4> slip_direction_reference {{Tensor<1,3>({1,0,0}),Tensor<1,3>({1,0,0}),Tensor<1,3>({0,0,1}),Tensor<1,3>({0,0,1})}};
-          }
+        
 
         for (unsigned int grain_i = 0; grain_i < n_grains; ++grain_i)
           {
